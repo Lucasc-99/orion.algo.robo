@@ -16,21 +16,21 @@ import numpy
 from orion.algo.base import BaseAlgorithm
 from orion.algo.space import Space
 
-from robo.priors.default_priors import DefaultPrior
-from robo.models.wrapper_bohamiann import WrapperBohamiann
+from robo.acquisition_functions.ei import EI
+from robo.acquisition_functions.lcb import LCB
+from robo.acquisition_functions.log_ei import LogEI
+from robo.acquisition_functions.marginalization import MarginalizationGPMCMC
+from robo.acquisition_functions.pi import PI
+from robo.initial_design import init_latin_hypercube_sampling
+from robo.maximizers.differential_evolution import DifferentialEvolution
+from robo.maximizers.random_sampling import RandomSampling
+from robo.maximizers.scipy_optimizer import SciPyOptimizer
 from robo.models.gaussian_process import GaussianProcess
 from robo.models.gaussian_process_mcmc import GaussianProcessMCMC
 from robo.models.random_forest import RandomForest
-from robo.maximizers.scipy_optimizer import SciPyOptimizer
-from robo.maximizers.random_sampling import RandomSampling
-from robo.maximizers.differential_evolution import DifferentialEvolution
+from robo.models.wrapper_bohamiann import WrapperBohamiann
+from robo.priors.default_priors import DefaultPrior
 from robo.solver.bayesian_optimization import BayesianOptimization
-from robo.acquisition_functions.ei import EI
-from robo.acquisition_functions.pi import PI
-from robo.acquisition_functions.log_ei import LogEI
-from robo.acquisition_functions.lcb import LCB
-from robo.acquisition_functions.marginalization import MarginalizationGPMCMC
-from robo.initial_design import init_latin_hypercube_sampling
 
 
 def build_bounds(space):
@@ -298,33 +298,3 @@ class RoBO(BaseAlgorithm):
         else:
             return self.space.sample(num, seed=tuple(self.rng.randint(0, 1000000, size=3)))
 
-    def observe(self, points, results):
-        """Observe evaluation `results` corresponding to list of `points` in
-        space.
-
-        TODO: document how observe work for this algo
-
-        Parameters
-        ----------
-        points : list of tuples of array-likes
-           Points from a `orion.algo.space.Space`.
-           Evaluated problem parameters by a consumer.
-        results : list of dicts
-           Contains the result of an evaluation; partial information about the
-           black-box function at each point in `params`.
-
-        Result
-        ------
-        objective : numeric
-           Evaluation of this problem's objective function.
-        gradient : 1D array-like, optional
-           Contains values of the derivatives of the `objective` function
-           with respect to `params`.
-        constraint : list of numeric, optional
-           List of constraints expression evaluation which must be greater
-           or equal to zero by the problem's definition.
-
-        """
-
-        # TODO: Adapt this to your algo
-        pass
