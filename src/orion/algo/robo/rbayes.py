@@ -14,7 +14,7 @@ import george
 import numpy
 
 from orion.algo.base import BaseAlgorithm
-from orion.algo.space import Integer, Real, Space
+from orion.algo.space import Space
 
 from robo.priors.default_priors import DefaultPrior
 from robo.models.wrapper_bohamiann import WrapperBohamiann
