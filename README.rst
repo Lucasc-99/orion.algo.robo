@@ -42,24 +42,17 @@ Features
 * TODO
 
 
-Requirements
-------------
-
-* TODO
-
 
 Installation
 ------------
+
+Install RoBO 
 
 You can install "orion.algo.robo" via `pip`_ from `PyPI`_::
 
     $ pip install git+https://github.com/Lucasc-99/orion.algo.robo.git
 
 
-Usage
------
-
-* TODO
 
 Contributing
 ------------
