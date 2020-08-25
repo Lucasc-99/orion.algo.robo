@@ -27,7 +27,7 @@ setup_args = dict(
     include_package_data=True,
     entry_points={
         'OptimizationAlgorithm': [
-            'robo_robo = orion.algo.robo.robo:robo'
+            'robo_rbayes = orion.algo.robo.rbayes:RoBO'
             ],
         },
     install_requires=['orion', 'numpy'],

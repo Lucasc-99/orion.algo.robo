@@ -8,7 +8,7 @@ import pytest
 
 from orion.algo.space import Integer, Real, Space
 import orion.core.cli
-from orion.core.io.experiment_builder import ExperimentBuilder
+from orion.client import create_experiment
 from orion.core.utils.tests import OrionState
 from orion.core.worker.primary_algo import PrimaryAlgo
 
@@ -130,8 +130,7 @@ def test_optimizer_actually_optimize(monkeypatch):
                              "-x~uniform(-50, 50)"])
 
         with open("./benchmark/robo.yaml", "r") as f:
-            exp = ExperimentBuilder().build_view_from(
-                {'name': 'exp', 'config': f})
+            exp = create_experiment(name="exp")
 
         objective = exp.stats['best_evaluation']
 
