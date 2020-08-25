@@ -19,17 +19,17 @@ jobs:
       after-success:
         - tox -e final-coverage
         - tox -e codecov
-      env: TOXENV=py35
-      python: 3.5
+      env: TOXENV=py36
+      python: 3.6
 
     # Reuse the test stage setup with a different environment each time
     - <<: *test
-      env: TOXENV=py36
-      python: 3.6
-    - <<: *test
       env: TOXENV=py37
       python: 3.7
-      dist: xenial
+    - <<: *test
+      env: TOXENV=py38
+      python: 3.8
+      dist: bionic
       sudo: true
     - stage: packaging
       env: TOXENV=packaging
