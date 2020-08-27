@@ -208,6 +208,22 @@ class RoBO(BaseAlgorithm):
 
         self.seed_rng(init_seed)
 
+    @property
+    def X(self):
+        X = numpy.zeros(len(self._trials_info), len(self.space))
+        for i, (point, result) in enumerate(self._trials_info.items()):
+            X[i] = point
+
+        return X
+
+    @property
+    def y(self):
+        y = numpy.zeros(len(self._trials_info))
+        for i, (point, result) in enumerate(self._trials_info.items()):
+            y[i] = result
+
+        return y
+
     def seed_rng(self, seed):
         """Seed the state of the random number generator.
 
@@ -293,8 +309,6 @@ class RoBO(BaseAlgorithm):
         """
         self.suggest_count += 1
         if self.suggest_count > self.n_init:
-
-            pass
+            return [self.robo.choose_next(self.X, self.y)]
         else:
             return self.space.sample(num, seed=tuple(self.rng.randint(0, 1000000, size=3)))
-
