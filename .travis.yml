@@ -35,6 +35,16 @@ jobs:
       env: TOXENV=packaging
       python: 3.6
 
+before_install:
+  - sudo add-apt-repository ppa:teward/swig3.0 -y
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update
+  - sudo apt-get install libeigen3-dev
+  # Installing swig
+  # ---------------
+  - sudo apt-get install -y swig3.0
+  - sudo ln -s /usr/bin/swig3.0 /usr/bin/swig
+
 install:
   - pip install tox
 script:
