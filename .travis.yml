@@ -5,7 +5,7 @@ jobs:
   include:
     - stage: pretest
       env: TOXENV=flake8
-      python: 3.6
+      python: 3.8
     - env: TOXENV=pylint
       python: 3.6
 
