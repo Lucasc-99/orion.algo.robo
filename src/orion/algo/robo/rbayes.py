@@ -9,10 +9,8 @@
 
 TODO: Write long description
 """
-
 import george
 import numpy
-
 from robo.acquisition_functions.ei import EI
 from robo.acquisition_functions.lcb import LCB
 from robo.acquisition_functions.log_ei import LogEI
@@ -49,7 +47,7 @@ def build_bounds(space):
         -------
             Optimizer
             :param space:
-        """
+    """
     lower = numpy.zeros(len(space.keys()))
     upper = numpy.zeros(len(space.keys()))
     for i, (_name, dim) in enumerate(space.items()):
@@ -81,7 +79,6 @@ def build_optimizer(model, maximizer="random", acquisition_func="log_ei", maximi
         :param maximizer:
         :param model:
     """
-
     if acquisition_func == "ei":
         a = EI(model)
     elif acquisition_func == "log_ei":
@@ -235,7 +232,7 @@ class RoBO(BaseAlgorithm):
             -------
                 Optimizer
 
-            """
+        """
         X = numpy.zeros(len(self._trials_info), len(self.space))
         for i, (point, _result) in enumerate(self._trials_info.items()):
             X[i] = point
@@ -267,12 +264,6 @@ class RoBO(BaseAlgorithm):
 
         .. note:: This methods does nothing if the algorithm is deterministic.
         """
-        #
-        # Look at method state dict in olympus version for rng values to seed
-        # Not good to set all with same seed
-        # sample five different
-        #
-
         self.rng = numpy.random.RandomState(seed)
 
         size = 4
