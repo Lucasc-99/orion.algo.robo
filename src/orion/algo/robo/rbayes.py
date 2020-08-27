@@ -8,6 +8,7 @@
     :synopsis: TODO
 
 TODO: Write long description
+
 """
 import george
 import numpy
@@ -33,20 +34,21 @@ from orion.algo.space import Space
 
 def build_bounds(space):
     """
-        General interface for Bayesian optimization for global black box
-        optimization problems.
-        Parameters
-        ----------
-        maximizer: {"random", "scipy", "differential_evolution"}
-            The optimizer for the acquisition function.
-        acquisition_func: {"ei", "log_ei", "lcb", "pi"}
-            The acquisition function
-        maximizer_seed: int
-            Seed for random number generator of the acquisition function maximizer
-        Returns
-        -------
-            Optimizer
-            :param space:
+    General interface for Bayesian optimization for global black box
+    optimization problems.
+    Parameters
+    ----------
+    maximizer: {"random", "scipy", "differential_evolution"}
+        The optimizer for the acquisition function.
+    acquisition_func: {"ei", "log_ei", "lcb", "pi"}
+        The acquisition function
+    maximizer_seed: int
+        Seed for random number generator of the acquisition function maximizer
+    Returns
+    -------
+        Optimizer
+        :param space:
+
     """
     lower = numpy.zeros(len(space.keys()))
     upper = numpy.zeros(len(space.keys()))
@@ -78,6 +80,7 @@ def build_optimizer(model, maximizer="random", acquisition_func="log_ei", maximi
         :param acquisition_func:
         :param maximizer:
         :param model:
+
     """
     if acquisition_func == "ei":
         a = EI(model)
@@ -138,6 +141,7 @@ def build_model(lower, upper, model_type="gp_mcmc", model_seed=1, prior_seed=1):
     Returns
     -------
         Model
+
     """
     assert upper.shape[0] == lower.shape[0], "Dimension miss match"
     assert numpy.all(lower < upper), "Lower bound >= upper bound"
@@ -224,13 +228,8 @@ class RoBO(BaseAlgorithm):
     @property
     def X(self):
         """
-            General interface for Bayesian optimization for global black box
-            optimization problems.
-            Parameters
-            ----------
-            Returns
-            -------
-                Optimizer
+        General interface for Bayesian optimization for global black box
+        optimization problems.
 
         """
         X = numpy.zeros(len(self._trials_info), len(self.space))
@@ -242,13 +241,8 @@ class RoBO(BaseAlgorithm):
     @property
     def y(self):
         """
-            General interface for Bayesian optimization for global black box
-            optimization problems.
-            Parameters
-            ----------
-            Returns
-            -------
-                Optimizer
+        General interface for Bayesian optimization for global black box
+        optimization problems.
 
         """
         y = numpy.zeros(len(self._trials_info))
@@ -263,6 +257,7 @@ class RoBO(BaseAlgorithm):
         :param seed: Integer seed for the random number generator.
 
         .. note:: This methods does nothing if the algorithm is deterministic.
+
         """
         self.rng = numpy.random.RandomState(seed)
 
@@ -301,6 +296,7 @@ class RoBO(BaseAlgorithm):
         """Reset the state of the algorithm based on the given state_dict
 
         :param state_dict: Dictionary representing state of an algorithm
+
         """
         # TODO: Adapt this to your algo
 
