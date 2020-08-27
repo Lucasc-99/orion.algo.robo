@@ -13,9 +13,6 @@ TODO: Write long description
 import george
 import numpy
 
-from orion.algo.base import BaseAlgorithm
-from orion.algo.space import Space
-
 from robo.acquisition_functions.ei import EI
 from robo.acquisition_functions.lcb import LCB
 from robo.acquisition_functions.log_ei import LogEI
@@ -32,11 +29,30 @@ from robo.models.wrapper_bohamiann import WrapperBohamiann
 from robo.priors.default_priors import DefaultPrior
 from robo.solver.bayesian_optimization import BayesianOptimization
 
+from orion.algo.base import BaseAlgorithm
+from orion.algo.space import Space
+
 
 def build_bounds(space):
+    """
+        General interface for Bayesian optimization for global black box
+        optimization problems.
+        Parameters
+        ----------
+        maximizer: {"random", "scipy", "differential_evolution"}
+            The optimizer for the acquisition function.
+        acquisition_func: {"ei", "log_ei", "lcb", "pi"}
+            The acquisition function
+        maximizer_seed: int
+            Seed for random number generator of the acquisition function maximizer
+        Returns
+        -------
+            Optimizer
+            :param space:
+        """
     lower = numpy.zeros(len(space.keys()))
     upper = numpy.zeros(len(space.keys()))
-    for i, (name, dim) in enumerate(space.items()):
+    for i, (_name, dim) in enumerate(space.items()):
         lower[i], upper[i] = dim.interval()
         if dim.prior_name == 'reciprocal':
             lower[i] = numpy.log(lower[i])
@@ -210,16 +226,36 @@ class RoBO(BaseAlgorithm):
 
     @property
     def X(self):
+        """
+            General interface for Bayesian optimization for global black box
+            optimization problems.
+            Parameters
+            ----------
+            Returns
+            -------
+                Optimizer
+
+            """
         X = numpy.zeros(len(self._trials_info), len(self.space))
-        for i, (point, result) in enumerate(self._trials_info.items()):
+        for i, (point, _result) in enumerate(self._trials_info.items()):
             X[i] = point
 
         return X
 
     @property
     def y(self):
+        """
+            General interface for Bayesian optimization for global black box
+            optimization problems.
+            Parameters
+            ----------
+            Returns
+            -------
+                Optimizer
+
+        """
         y = numpy.zeros(len(self._trials_info))
-        for i, (point, result) in enumerate(self._trials_info.items()):
+        for i, (_point, result) in enumerate(self._trials_info.items()):
             y[i] = result
 
         return y
@@ -264,8 +300,8 @@ class RoBO(BaseAlgorithm):
             if hasattr(self.robo.model, 'p0'):
                 s_dict['model_p0'] = self.robo.model.p0.tolist()
         else:
-
-            s_dict['model_kernel_parameter_vector'] = self.robo.model.kernel.get_parameter_vector().tolist()
+            kernel = 'model_kernel_parameter_vector'
+            s_dict[kernel] = self.robo.model.kernel.get_parameter_vector().tolist()
             s_dict['noise'] = self.robo.model.noise
 
         return s_dict
