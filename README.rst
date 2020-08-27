@@ -28,25 +28,35 @@ orion.algo.robo
     :alt: Travis tests
 
 
-TODO
-
-
 ----
 
 This `orion.algo`_ plugin was generated with `Cookiecutter`_ along with `@Epistimio`_'s `cookiecutter-orion.algo`_ template.
 
 
-Features
---------
-
-* TODO
-
-
-
 Installation
 ------------
 
-Install RoBO 
+Install RoBO: instructions from https://github.com/automl/RoBO/blob/master/README.md
+
+NOTE: RoBO installation is very difficult on MAC
+
+RoBO uses the libraries george and pyrfr.
+Additionally, make sure that libeigen and swig are installed
+
+sudo apt-get install libeigen3-dev swig
+
+Download RoBO and then change into the new directory:
+
+git clone https://github.com/automl/RoBO
+cd RoBO/
+Install the required dependencies.
+
+for req in $(cat requirements.txt); do pip install $req; done
+Finally install RoBO by:
+
+python setup.py install
+
+
 
 You can install "orion.algo.robo" via `pip`_ from `PyPI`_::
 
