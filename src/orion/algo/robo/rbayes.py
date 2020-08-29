@@ -34,20 +34,8 @@ from orion.algo.space import Space
 
 def build_bounds(space):
     """
-    General interface for Bayesian optimization for global black box
-    optimization problems.
-    Parameters
-    ----------
-    maximizer: {"random", "scipy", "differential_evolution"}
-        The optimizer for the acquisition function.
-    acquisition_func: {"ei", "log_ei", "lcb", "pi"}
-        The acquisition function
-    maximizer_seed: int
-        Seed for random number generator of the acquisition function maximizer
-    Returns
-    -------
-        Optimizer
-        :param space:
+    Build bounds of optimization space
+    :param space:
 
     """
     lower = numpy.zeros(len(space.keys()))
@@ -228,8 +216,7 @@ class RoBO(BaseAlgorithm):
     @property
     def X(self):
         """
-        General interface for Bayesian optimization for global black box
-        optimization problems.
+        Matrix containing trial points
 
         """
         X = numpy.zeros(len(self._trials_info), len(self.space))
@@ -241,8 +228,7 @@ class RoBO(BaseAlgorithm):
     @property
     def y(self):
         """
-        General interface for Bayesian optimization for global black box
-        optimization problems.
+        Vector containing trial results
 
         """
         y = numpy.zeros(len(self._trials_info))
