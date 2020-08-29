@@ -215,10 +215,7 @@ class RoBO(BaseAlgorithm):
 
     @property
     def X(self):
-        """
-        Matrix containing trial points
-
-        """
+        """Matrix containing trial points"""
         X = numpy.zeros(len(self._trials_info), len(self.space))
         for i, (point, _result) in enumerate(self._trials_info.items()):
             X[i] = point
@@ -227,10 +224,7 @@ class RoBO(BaseAlgorithm):
 
     @property
     def y(self):
-        """
-        Vector containing trial results
-
-        """
+        """Vector containing trial results"""
         y = numpy.zeros(len(self._trials_info))
         for i, (_point, result) in enumerate(self._trials_info.items()):
             y[i] = result
