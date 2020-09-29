@@ -40,6 +40,7 @@ before_install:
   - sudo apt-get install libeigen3-dev
   - sudo apt-get install -y swig3.0
   - sudo ln -s /usr/bin/swig3.0 /usr/bin/swig
+  - pip install git+https://github.com/Epistimio/orion.git@develop
 
 install:
   - pip install tox
