@@ -12,6 +12,7 @@ TODO: Write long description
 """
 import george
 import numpy
+from pybnn.dngo import DNGO
 from robo.acquisition_functions.ei import EI
 from robo.acquisition_functions.lcb import LCB
 from robo.acquisition_functions.log_ei import LogEI
@@ -21,15 +22,15 @@ from robo.initial_design import init_latin_hypercube_sampling
 from robo.maximizers.differential_evolution import DifferentialEvolution
 from robo.maximizers.random_sampling import RandomSampling
 from robo.maximizers.scipy_optimizer import SciPyOptimizer
-from robo.models.gaussian_process import GaussianProcess
-from robo.models.gaussian_process_mcmc import GaussianProcessMCMC
 from robo.models.random_forest import RandomForest
-from robo.models.wrapper_bohamiann import WrapperBohamiann
 from robo.priors.default_priors import DefaultPrior
 from robo.solver.bayesian_optimization import BayesianOptimization
 
 from orion.algo.base import BaseAlgorithm
+from orion.algo.robo.wrappers import (
+    OrionBohamiannWrapper, OrionGaussianProcessMCMCWrapper, OrionGaussianProcessWrapper)
 from orion.algo.space import Space
+from orion.core.utils.points import flatten_dims, regroup_dims
 
 
 def build_bounds(space):
@@ -38,15 +39,21 @@ def build_bounds(space):
     :param space:
 
     """
-    lower = numpy.zeros(len(space.keys()))
-    upper = numpy.zeros(len(space.keys()))
-    for i, (_name, dim) in enumerate(space.items()):
-        lower[i], upper[i] = dim.interval()
-        if dim.prior_name == 'reciprocal':
-            lower[i] = numpy.log(lower[i])
-            upper[i] = numpy.log(upper[i])
+    lower = []
+    upper = []
+    for dim in space.values():
+        low, high = dim.interval()
 
-    return lower, upper
+        shape = dim.shape
+        assert not shape or len(shape) == 1
+        if shape:
+            low = tuple(numpy.ones(shape) * low)
+            high = tuple(numpy.ones(shape) * high)
+
+        lower.append(low)
+        upper.append(high)
+
+    return (numpy.array(flatten_dims(arr, space)) for arr in (lower, upper))
 
 
 def build_optimizer(model, maximizer="random", acquisition_func="log_ei", maximizer_seed=1):
@@ -82,7 +89,7 @@ def build_optimizer(model, maximizer="random", acquisition_func="log_ei", maximi
         raise ValueError("'{}' is not a valid acquisition function"
                          .format(acquisition_func))
 
-    if isinstance(model, GaussianProcessMCMC):
+    if isinstance(model, OrionGaussianProcessMCMCWrapper):
         acquisition_func = MarginalizationGPMCMC(a)
     else:
         acquisition_func = a
@@ -153,26 +160,26 @@ def build_model(lower, upper, model_type="gp_mcmc", model_seed=1, prior_seed=1):
     numpy.random.seed(model_seed)
     model_rng = numpy.random.RandomState(model_seed)
     if model_type == "gp":
-        model = GaussianProcess(kernel, prior=prior, rng=model_rng,
-                                normalize_output=False, normalize_input=True,
-                                lower=lower, upper=upper)
+        model = OrionGaussianProcessWrapper(
+            kernel, prior=prior, rng=model_rng, normalize_output=False, normalize_input=True,
+            lower=lower, upper=upper)
     elif model_type == "gp_mcmc":
-        model = GaussianProcessMCMC(kernel, prior=prior,
-                                    n_hypers=n_hypers,
-                                    chain_length=200,
-                                    burnin_steps=100,
-                                    normalize_input=True,
-                                    normalize_output=False,
-                                    rng=model_rng, lower=lower, upper=upper)
+        model = OrionGaussianProcessMCMCWrapper(
+            kernel, prior=prior,
+            n_hypers=n_hypers,
+            chain_length=200,
+            burnin_steps=100,
+            normalize_input=True,
+            normalize_output=False,
+            rng=model_rng, lower=lower, upper=upper)
 
     elif model_type == "rf":
         model = RandomForest(rng=model_rng)
 
     elif model_type == "bohamiann":
-        model = WrapperBohamiann()
+        model = OrionBohamiannWrapper(lower, upper)
 
     elif model_type == "dngo":
-        from pybnn.dngo import DNGO
         model = DNGO()
 
     else:
@@ -197,28 +204,48 @@ class RoBO(BaseAlgorithm):
                  maximizer_seed=0,
                  **kwargs):
 
-        super(RoBO, self).__init__(space, **kwargs)
+        super(RoBO, self).__init__(
+            space,
+            model_type=model_type, acquisition_func=acquisition_func,
+            n_init=n_init, model_seed=model_seed, prior_seed=prior_seed, init_seed=init_seed,
+            maximizer_seed=maximizer_seed, **kwargs)
 
+        self.maximizer = maximizer
         self.suggest_count = 0
-        self.n_init = n_init
-        self.model_type = model_type
+        self.model = None
+        self.robo = None
 
-        lower, upper = build_bounds(space)
+    @property
+    def space(self):
+        """Space of the optimizer"""
+        return self._space
 
-        model = build_model(lower, upper, model_type, model_seed, prior_seed)
-        self.model = model
+    @space.setter
+    def space(self, space):
+        """Setter of optimizer's space.
+
+        Side-effect: Will initialize optimizer.
+        """
+        self._space = space
+        self._initialize()
+
+    def _initialize(self):
+        """Initialize the optimizer once the space is transformed"""
+        lower, upper = build_bounds(self.space)
+        self.model = build_model(lower, upper, self.model_type, self.model_seed, self.prior_seed)
         self.robo = build_optimizer(
-            model, maximizer=maximizer, acquisition_func=acquisition_func,
-            maximizer_seed=maximizer_seed)
+            self.model, maximizer=self.maximizer, acquisition_func=self.acquisition_func,
+            maximizer_seed=self.maximizer_seed)
 
-        self.seed_rng(init_seed)
+        self.seed_rng(self.init_seed)
 
     @property
     def X(self):
         """Matrix containing trial points"""
-        X = numpy.zeros(len(self._trials_info), len(self.space))
-        for i, (point, _result) in enumerate(self._trials_info.items()):
-            X[i] = point
+        ref_point = flatten_dims(self.space.sample(1, seed=0)[0], self.space)
+        X = numpy.zeros((len(self._trials_info), len(ref_point)))
+        for i, (point, _result) in enumerate(self._trials_info.values()):
+            X[i] = flatten_dims(point, self.space)
 
         return X
 
@@ -226,8 +253,8 @@ class RoBO(BaseAlgorithm):
     def y(self):
         """Vector containing trial results"""
         y = numpy.zeros(len(self._trials_info))
-        for i, (_point, result) in enumerate(self._trials_info.items()):
-            y[i] = result
+        for i, (_point, result) in enumerate(self._trials_info.values()):
+            y[i] = result['objective']
 
         return y
 
@@ -241,34 +268,24 @@ class RoBO(BaseAlgorithm):
         """
         self.rng = numpy.random.RandomState(seed)
 
-        size = 4
+        size = 3
         rand_nums = numpy.random.randint(1, 10e8, size)
 
         self.robo.rng = numpy.random.RandomState(rand_nums[0])
         self.robo.maximize_func.rng.seed(rand_nums[1])
-        self.robo.model.rng.seed(rand_nums[2])
-        self.model.prior.rng.seed(rand_nums[3])
+        self.model.seed(rand_nums[2])
 
     @property
     def state_dict(self):
         """Return a state dict that can be used to reset the state of the algorithm."""
-        # TODO: Adapt this to your algo
-
         s_dict = super(RoBO, self).state_dict
 
         s_dict.update({'rng_state': self.rng.get_state(),
                        'global_numpy_rng_state': numpy.random.get_state(),
                        'maximizer_rng_state': self.robo.maximize_func.rng.get_state(),
-                       'prior_rng_state': self.robo.model.prior.rng.get_state(),
-                       'model_rng_state': self.robo.model.rng.get_state()})
+                       'suggest_count': self.suggest_count})
 
-        if self.model_type == 'gp_mcmc':
-            if hasattr(self.robo.model, 'p0'):
-                s_dict['model_p0'] = self.robo.model.p0.tolist()
-        else:
-            kernel = 'model_kernel_parameter_vector'
-            s_dict[kernel] = self.robo.model.kernel.get_parameter_vector().tolist()
-            s_dict['noise'] = self.robo.model.noise
+        s_dict['model'] = self.model.state_dict()
 
         return s_dict
 
@@ -278,15 +295,13 @@ class RoBO(BaseAlgorithm):
         :param state_dict: Dictionary representing state of an algorithm
 
         """
-        # TODO: Adapt this to your algo
-
         super(RoBO, self).set_state(state_dict)
 
         self.rng.set_state(state_dict['rng_state'])
         numpy.random.set_state(state_dict['global_numpy_rng_state'])
         self.robo.maximize_func.rng.set_state(state_dict['maximizer_rng_state'])
-        self.robo.model.rng.set_state(state_dict['model_rng_state'])
-        self.robo.model.prior.rng.set_state(state_dict['prior_rng_state'])
+        self.model.set_state(state_dict['model'])
+        self.suggest_count = state_dict['suggest_count']
 
     def suggest(self, num=1):
         """Suggest a `num`ber of new sets of parameters.
@@ -312,6 +327,6 @@ class RoBO(BaseAlgorithm):
         """
         self.suggest_count += 1
         if self.suggest_count > self.n_init:
-            return [self.robo.choose_next(self.X, self.y)]
+            return [regroup_dims(self.robo.choose_next(self.X, self.y), self.space)]
         else:
             return self.space.sample(num, seed=tuple(self.rng.randint(0, 1000000, size=3)))
